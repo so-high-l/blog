@@ -22,25 +22,27 @@ The project demonstrates a classic MVC-style web application with:
 - **JDBC** with the MySQL Connector/J driver
 - **HTML, CSS, and JavaScript**
 - **JSTL** tag libraries
+- **Maven** for dependency management and WAR packaging
 
 ## Project structure
 
 ```text
 .
+├── pom.xml                  # Maven build and dependency configuration
 ├── src/main/java/
 │   ├── dao/                 # Database access and persistence logic
 │   ├── metier/              # Domain models such as Post, User, Comment, and Like
 │   ├── package_test/        # Test or development-related classes
 │   └── web/                 # Servlet controller and request models
 ├── src/main/webapp/
-│   ├── WEB-INF/             # Web deployment descriptor and libraries
+│   ├── WEB-INF/             # Web deployment descriptor
 │   ├── META-INF/            # Web application metadata
 │   ├── assets/              # CSS and JavaScript assets
 │   ├── index.jsp            # Login and registration page
 │   ├── home.jsp             # Main feed
 │   ├── postDetails.jsp      # Post details and comments
 │   └── profile.jsp          # User profile
-└── build/                   # Compiled classes
+└── target/                  # Maven build output, generated locally
 ```
 
 ## Application flow
@@ -57,12 +59,14 @@ The DAO layer uses JDBC and a shared connection managed by `dao.SingletonConnect
 
 ## Requirements
 
-Before running the project, install:
+Install the following before running the application:
 
 - JDK 16 or a compatible Java Development Kit
+- Apache Maven 3.8+
 - Apache Tomcat 8.5
 - MySQL Server
-- Eclipse IDE for Enterprise Java Developers, or another IDE capable of deploying Java web applications
+
+The project is configured for the `javax.servlet` API used by Tomcat 8.5. It is not currently a Jakarta EE 9+ application.
 
 ## Database setup
 
@@ -84,7 +88,23 @@ Password: [empty]
 
 > **Security note:** The database connection is currently configured in `src/main/java/dao/SingletonConnection.java`. For anything beyond local development, move credentials to environment variables or an external configuration file, use a dedicated database user, and never commit production secrets.
 
-## Run locally
+## Build the application
+
+Compile the Java sources and package the application as a WAR:
+
+```bash
+mvn clean package
+```
+
+The generated artifact is:
+
+```text
+target/blog.war
+```
+
+Maven downloads the Servlet API, JSTL, and MySQL Connector/J dependencies automatically. The old JAR files under `src/main/webapp/WEB-INF/lib` are retained for Eclipse compatibility, but Maven is the source of truth for new builds.
+
+## Run locally with Tomcat
 
 1. Clone the repository:
 
@@ -95,21 +115,33 @@ Password: [empty]
 
 2. Create and configure the `blog_db` MySQL database.
 
-3. Import the project into Eclipse as an existing Java web project.
+3. Build the WAR:
 
-4. Confirm that the project uses:
-   - Java 16
-   - Apache Tomcat 8.5
-   - The MySQL Connector/J driver
-   - The JSTL libraries included under `src/main/webapp/WEB-INF/lib`
+   ```bash
+   mvn clean package
+   ```
 
-5. Add the project to a Tomcat server and start the server.
+4. Copy `target/blog.war` to Tomcat's `webapps` directory:
+
+   ```bash
+   cp target/blog.war "$CATALINA_HOME/webapps/"
+   ```
+
+5. Start Tomcat:
+
+   ```bash
+   "$CATALINA_HOME/bin/startup.sh"
+   ```
+
+   On Windows, run `startup.bat` instead.
 
 6. Open the application at:
 
    ```text
    http://localhost:8080/blog/
    ```
+
+You can also import the project into Eclipse as a Maven project and attach it to a configured Tomcat 8.5 server.
 
 ## Main pages
 
@@ -136,10 +168,10 @@ The servlet controller supports routes including:
 
 ## Current limitations
 
-- The repository does not currently include a Maven or Gradle build file.
 - Database schema and seed scripts are not included, so the schema must be created separately.
 - Database credentials are currently hard-coded for local development.
-- Deployment is configured around Eclipse and Tomcat rather than a reproducible command-line build.
+- The application targets the older `javax.servlet` namespace and Tomcat 8.5.
+- Automated tests and CI configuration are not currently included.
 
 ## Contributing
 
@@ -147,7 +179,7 @@ Contributions are welcome. A typical workflow is:
 
 1. Fork the repository.
 2. Create a feature branch.
-3. Make and test your changes locally.
+3. Make and test your changes locally with `mvn clean package`.
 4. Open a pull request with a clear description of the change.
 
 ## License
